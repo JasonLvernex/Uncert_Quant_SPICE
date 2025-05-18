@@ -16,3 +16,22 @@ This repository provides code for **Uncertainty Quantification in SPICE Reconstr
 
 └── README.md # Project documentation (this file)
 
+## Requirements
+
+pip install -r requirements.txt
+
+## Usage
+
+## Citation
+
+If you use this code or find it helpful, please cite:
+
+Tian Lyu, Simon M. Finney, Saad Jbabdi, William T. Clarke
+**"Uncertainty Quantification in SPICE Reconstruction of MRSI"**,  in Proc. 41st Annu. Sci. Meeting ESMRMB, Marseille, France, Oct. 2025.
+
+## License
+
+© 2025 University of Oxford. All rights reserved.
+
+This software is provided for academic and non-commercial use only.  
+For licensing inquiries, please contact William Clarke @ william.clarke@ndcn.ox.ac.uk.
