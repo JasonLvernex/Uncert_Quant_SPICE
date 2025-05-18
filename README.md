@@ -14,6 +14,8 @@ This repository provides code for **Uncertainty Quantification in SPICE Reconstr
 
 ├── .gitignore # Ignore rules for datasets and outputs
 
+├── requirements.txt # Environment requirement file
+
 └── README.md # Project documentation (this file)
 
 ## Requirements
