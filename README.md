@@ -24,6 +24,12 @@ pip install -r requirements.txt
 
 ## Usage
 
+1. Launch the notebook: SPICE_Uncert_nbTest.ipynb
+
+2.Follow the notebook to: 
+
+--- 1. Load basis and anatomical inputs
+
 ## Citation
 
 If you use this code or find it helpful, please cite:
