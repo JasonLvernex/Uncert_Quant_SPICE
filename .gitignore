@@ -1,4 +1,5 @@
 /Train_data_SPICE/
+/Saved_Data/
 __pycache__/
 .ipynb_checkpoints/
 *.pyc

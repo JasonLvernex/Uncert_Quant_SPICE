@@ -1,6 +1,12 @@
-'''
+
+"""
 Ancillary Functions for SPICE_Uncertainty 
-'''
+
+
+Author: Jason Tian Lyu <tian.lyu@ndcn.ox.ac.uk>
+
+Copyright University of Oxford, 2025.
+"""
 
 # import libs
 import matplotlib.pyplot as plt
@@ -35,50 +41,6 @@ PEAK_1_ROUGH_IDX = 336#1321
 '''
 Phantom simulation related
 '''
-def createSpatialCurve(K_POINTS):
-        '''
-        Describe 1D phantom amplitudes
-        Plot and construct a 1D Phantom
-        '''
-        phantom_res = K_POINTS  # there are 32 points along the x-axis
-        phantom_size = 1  # the range of the x-axis used to distribute the peaks, see follwoing line for further explainations
-        x_step = phantom_size / phantom_res # our resolution/datapoints sampled are 32 point, so each "step" we move our detector will move along x_step distance along x-axis
-        x_hr = np.arange(x_step, phantom_size+x_step/2, x_step) #Creates an array of spatial points from x_step to phantom_size with a step size of x_step
-        x_hr_pos = x_hr - phantom_size/2 # move x_hr to actual positions in x-axis
-
-        ################################# TESTING FOR BOUNDARY PRIOR #########################
-        peak1_amp = 1-np.exp(-0.5/x_hr)  
-        peak2_amp = np.flip(peak1_amp.copy())
-        peak1_amp[(x_hr_pos<-0.4)|(x_hr_pos>0.4)] = 0
-        peak2_amp[(x_hr_pos<-0.4)|(x_hr_pos>0.4)] = 0
-        peak1_amp[(x_hr_pos<0.3)&(x_hr_pos>0.18)] = 0
-        peak2_amp[(x_hr_pos<0.3)&(x_hr_pos>0.18)] = 0
-        ################################# TESTING FOR BOUNDARY PRIOR #########################  
-
-         # acquire boundary position information
-        boundary_mask = (x_hr_pos < -0.4) | (x_hr_pos > 0.4) | ((x_hr_pos<0.3)&(x_hr_pos>0.18))
-        print("boundary position (x_hr_pos):", x_hr_pos[boundary_mask])
-        print("boundary position peak1_amp value:", peak1_amp[boundary_mask])
-        boundary_indices = np.where(boundary_mask)[0]
-        print("Boundary mask TRUE idx:", boundary_indices)
-        lm_boundary_mask_idx = np.where(x_hr_pos < -0.4)[0]
-        print(f'boundary left most next is peak 0: {peak1_amp[lm_boundary_mask_idx[-1]+1]}, peak 2: {peak2_amp[lm_boundary_mask_idx[-1]+1]}')
-
-
-        # Combine all peaks
-        combined_amp = peak1_amp + peak2_amp 
-
-
-
-        plt.figure()  # Create a new figure
-        plt.plot(x_hr_pos, peak1_amp, 's--', label='Peak 1')
-        plt.plot(x_hr_pos, peak2_amp, 'o--', label='Peak 2')
-        plt.plot(x_hr_pos, combined_amp, 'k-', label='Combined Amplitude')
-        plt.xlabel('x')
-        plt.ylabel('Amplitude')
-        plt.title('1D Phantom Amplitudes')
-        plt.show()
-        return phantom_res, phantom_size, x_hr, x_hr_pos, peak1_amp, peak2_amp, combined_amp
 
 def createSpatialCurve_1D_Brain(K_POINTS:int,
                                 Brain_img_smoothed:np.ndarray) -> tuple:
@@ -92,7 +54,6 @@ def createSpatialCurve_1D_Brain(K_POINTS:int,
         x_hr = np.arange(x_step, phantom_size+x_step/2, x_step) #Creates an array of spatial points from x_step to phantom_size with a step size of x_step
         x_hr_pos = x_hr - phantom_size/2 # move x_hr to actual positions in x-axis
 
-        ################################# TESTING FOR BOUNDARY PRIOR #########################
         ''' 
         Assumption:
         1. Brain_img_smoothed:
@@ -111,16 +72,16 @@ def createSpatialCurve_1D_Brain(K_POINTS:int,
                 peak1_amp[i] = 0  # No signal for fat tissue/blood-brain barrier
                 peak2_amp[i] = 0
             elif val <= 3:
-                peak1_amp[i] = 1.0  # NAA high in GM
+                peak1_amp[i] = 1.0  # Glu high in GM
                 peak2_amp[i] = 0.5  # Cho low in GM
             elif val > 3:
-                peak1_amp[i] = 0.5  # NAA low in WM
+                peak1_amp[i] = 0.5  # Glu low in WM
                 peak2_amp[i] = 1.0  # Cho high in WM
             # Adjust CSF region (value ~2)
             if val == 2 and (i > (K_POINTS/2-8) and i < (K_POINTS/2+8)):
-                peak1_amp[i] = 0.2  # NAA low in CSF
+                peak1_amp[i] = 0.2  # Glu low in CSF
                 peak2_amp[i] = 0.2  # Cho low in CSF
-        ################################# TESTING FOR BOUNDARY PRIOR #########################  
+
 
 
         plt.figure()  # Create a new figure
@@ -401,11 +362,7 @@ def Undersampe_zeroout(noisy_kt_space_US:np.ndarray,
             # Plot encoding matrix
             # Generate encoding matrix, F
             k_x = np.linspace(-0.5, 0.5, K_POINTS)
-            # This next line needed to stop a phase roll across space
-            # A phase roll is an undesirable effect that can occur if the k-space sampling is not centered correctly. 
-            # By shifting k_x slightly, the code ensures that the spatial encoding is aligned properly.
-            # When the k-space sampling is not centered around zero, each spatial frequency component accumulates a phase offset. 
-            # This offset manifests as a linear phase shift in the reconstructed spatial signal, which appears as a rolling or drifting effect.
+
             k_x += (k_x[0]-k_x[1])/2
 
             if plot:
@@ -641,37 +598,6 @@ def confidence_variation_voxels(n1:float, n2:float, W_max:float, K:int, ak: list
             c_n1_n2 = 1/W_max
         return c_n1_n2
 
-# def min_pool_adjacent_Voxel(Buffer,constraint_img,pool_size):
-#          # Handle 1D input by converting it to 2D (row vector)
-#         if Buffer.ndim == 1:
-#             original_1d = True
-#             matrix = matrix.reshape(1, -1)  # Convert to shape (1, n)
-#         else:
-#             original_1d = False
-
-#         # Dimensions of the input matrix
-#         m, n = constraint_img.shape
-
-#         # Initialize the output matrix
-#         pooled_matrix = np.zeros((m, n))  # Same size as the original matrix
-
-#         # Perform min pooling with stride = 1
-#         for i in range(m):
-#             for j in range(n):
-#                 # Define the current pooling window
-#                 start_row = i
-#                 start_col = j
-#                 end_row = start_row + pool_size
-#                 end_col = start_col + pool_size
-
-#                 # Apply min pooling in the current window
-#                 pooled_matrix[start_row:end_row, start_col:end_col] = np.min(Buffer[start_row:end_row, start_col:end_col,:])
-
-#         # If the input was 1D, return a flattened result
-#         if original_1d:
-#             return pooled_matrix.flatten()
-
-#         return pooled_matrix
 
 def min_pool_adjacent_Voxel(Buffer,constraint_img,pool_size):
          # Handle 1D input by converting it to 2D (row vector)
@@ -1100,18 +1026,6 @@ def complex_multivariate_normal(mean, cov, n_samples):
     n_samples: int
     Returns: (n_samples, n) complex samples
     """
-    # n = mean.shape[0]
-
-    # # Cholesky decomposition
-    # L = np.linalg.cholesky(cov)
-
-    # # Standard complex normal: real and imaginary parts N(0, 0.5)
-    # w_real = np.random.normal(0, 1 / np.sqrt(2), size=(n_samples, n))
-    # w_imag = np.random.normal(0, 1 / np.sqrt(2), size=(n_samples, n))
-    # w = w_real + 1j * w_imag
-
-    # # Generate complex samples
-    # samples = w @ L.T + mean
 
     n = mean.shape[0]
     std_dev = np.sqrt(np.abs(np.diag(cov)))  # 标准差，确保正实数
@@ -1203,12 +1117,7 @@ def plot_spatial_mc_ana_combined(mc_cg,mc_analyt, std_uncert1_analyt,std_uncert2
     peak1est_cg = np.abs(res_array_spec1.std(axis=0))[:, PEAK_1_ROUGH_IDX]
     peak2est_analyt = np.abs(res_array_spec2.std(axis=0))[:, PEAK_0_ROUGH_IDX]
     peak1est_analyt = np.abs(res_array_spec2.std(axis=0))[:, PEAK_1_ROUGH_IDX]
-    # peak2est = (np.abs(recon)).std(axis=0)[:, 64]
-    # peak1est = (np.abs(recon)).std(axis=0)[:, 162]
-    # peak2est_cg /= 1.4  # Fudge factor
-    # peak1est_cg /= 1.4  # Fudge factor
-    # peak2est_analyt /= 1.4  # Fudge factor
-    # peak1est_analyt /= 1.4  # Fudge factor
+
     xaxis = x_hr_pos
 
     # Plot the data
@@ -1396,21 +1305,10 @@ def Create_laplacian_samples(spice_est:np.ndarray,
     """
     n_dim, n_channels = spice_est.shape
 
-    # # Result: a 3D array of shape (1000, 32, 512)
-    # samples = np.zeros((n_samples, n_dim, n_channels))
-
-    # for i in range(n_channels):
-    #     mean_vec = spice_est_cg[:, i]
-    #     samples[:, :, i] = np.random.multivariate_normal(mean=mean_vec, cov=cov_overall, size=n_samples)
 
     samples = np.zeros((n_samples, n_dim, n_channels), dtype=np.complex128)
     std_dev = np.sqrt(np.abs(np.diag(cov_overall))) 
 
-    # for i in range(n_channels):
-    #     mean_vec = spice_est[:, i]
-    #     real_part = np.random.normal(loc=np.real(mean_vec)[None, :], scale=std_dev[None, :], size=(n_samples, n_dim))
-    #     imag_part = np.random.normal(loc=np.imag(mean_vec)[None, :], scale=std_dev[None, :], size=(n_samples, n_dim))
-    #     samples[:, :, i] = real_part + 1j * imag_part
 
     # Expand std_dev to shape (n_dim, n_channels)
     std_dev_matrix = np.repeat(std_dev[:, None], n_channels, axis=1)  # shape (n_dim, n_channels)
@@ -1432,40 +1330,6 @@ def Create_laplacian_samples(spice_est:np.ndarray,
 ''' 
 MRS fit
 '''
-# def Sig_func_Multi_Peak(bm_list, lw_list, Cm, time_axis,n_voxels):
-#     taxis = np.array(time_axis).reshape(512, 1)
-#     min_exp = -50
-#     max_exp = 50
-
-#     # Check that lw_list length matches bm_list length
-#     assert len(lw_list) == len(bm_list), f"lw_list length {len(lw_list)} doesn't match bm_list length {len(bm_list)}."
-
-#     fids = []
-#     for i in range(len(bm_list)):  # For each peak
-#         this_lw = lw_list[i]
-
-
-#         # If it's a scalar,  -> extends to (32,)
-#         if np.isscalar(this_lw):
-#             lw_array = np.ones((1, n_voxels)) * this_lw
-#         else:
-#             # If it's an array, make sure the shape is (32,)
-#             this_lw = np.asarray(this_lw)
-#             assert this_lw.shape == (n_voxels,), f"Expected shape (32,), but got {this_lw.shape}"
-#             lw_array = this_lw[np.newaxis, :]
-
-
-#         if any([not (min_exp <= ll <= max_exp) for ll in lw_array[0]]):
-#             raise ValueError(f'lw must be in the range {min_exp} to {max_exp}, it is {this_lw}.')
-
-#         broadening = np.exp(-lw_array * np.pi * taxis)  # (512,32)
-
-#         fid = (np.real(bm_list[i]).reshape(512,1)) * broadening  # (512,32)
-#         fid = fid * Cm[i]  # multiplied by the concentration (scalar)
-#         fids.append(fid)
-
-#     total = np.sum(fids, axis=0).T  # (32,512)
-#     return total
 
 def Sig_func_Multi_Peak(bm_list, lw_list, Cm, time_axis, n_voxels):
     taxis = np.array(time_axis).reshape(N_SEQ_POINTS, 1)
@@ -1475,7 +1339,7 @@ def Sig_func_Multi_Peak(bm_list, lw_list, Cm, time_axis, n_voxels):
     n_peaks = len(bm_list)
     fids = []
 
-    # 自动转换成列表形式
+    # conversion to list form
     if isinstance(lw_list, np.ndarray):
         lw_list = [lw_list[i, :] if lw_list.ndim == 2 else lw_list[i] for i in range(n_peaks)]
     if isinstance(Cm, np.ndarray):
@@ -1485,7 +1349,7 @@ def Sig_func_Multi_Peak(bm_list, lw_list, Cm, time_axis, n_voxels):
         this_lw = lw_list[i]
         this_cm = Cm[i]
 
-        # 如果是标量，扩展为 (n_voxels,)
+        # If scalar, the extension is (n_voxels,)
         if np.isscalar(this_lw):
             this_lw = np.ones(n_voxels) * this_lw
         else:
@@ -1521,7 +1385,6 @@ def fit_mrs_spectrum_nonlinear(bm_FIDs, time_axis, spectrum, initial_guesses):
 
     spectrum = np.real(spectrum.flatten())
 
-    # === 安全检查：确认所有输入数值合法 ===
     if not (np.all(np.isfinite(spectrum)) and 
             np.all(np.isfinite(time_axis)) and 
             np.all(np.isfinite(bm_FIDs)) and 
@@ -1553,7 +1416,6 @@ def fit_mrs_spectrum_nonlinear(bm_FIDs, time_axis, spectrum, initial_guesses):
     lower_bounds = [b[0] for b in full_bounds]
     upper_bounds = [b[1] for b in full_bounds]
 
-    # === 拟合 + 错误捕获 ===
     try:
         popt, pcov = curve_fit(model_func, time_axis, spectrum,
                                p0=initial_guesses, bounds=(lower_bounds, upper_bounds),
@@ -1678,7 +1540,7 @@ def mc_basis(spice_mc_U, bm_FIDs, taxis):
     output_cm2 = []
     output_LW1 = []
     output_LW2 = []
-    n_skipped = 0  # 计数拟合失败的 spectrum 数量
+    n_skipped = 0  
 
     for i in range(iterations):
         est_U = spice_mc_U[i,:,:]
@@ -1709,7 +1571,7 @@ def mc_basis(spice_mc_U, bm_FIDs, taxis):
             print(f"Iteration {i} completed.")
 
         # plot_popt(popt)
-    print(f"✅ 共跳过 {n_skipped} 个 spectrum")
+    print(f"✅ skipped {n_skipped} spectrum")
     return np.asarray(output_cm1), np.asarray(output_cm2),np.asarray(output_LW1),np.asarray(output_LW2)
 
 
@@ -1740,7 +1602,7 @@ def mc_basis_vbv(spice_mc_U, bm_FIDs, taxis):
 
             if popt is None:
                 all_success = False
-                break  # 如果有一个 voxel 拟合失败，就跳过整次 i
+                break  
 
             lw1_iter.append(popt[0])
             cm1_iter.append(popt[1])
@@ -1748,7 +1610,7 @@ def mc_basis_vbv(spice_mc_U, bm_FIDs, taxis):
             cm2_iter.append(popt[3])
 
         if not all_success:
-            print(f"⚠️ 第 {i} 个 MC sample 中至少一个 voxel 拟合失败，跳过整个 sample")
+            print(f"⚠️ Number {i}  MC sample has voxel fitting failure, skipping the sample")
             n_skipped += 1
             continue
 
@@ -1760,7 +1622,7 @@ def mc_basis_vbv(spice_mc_U, bm_FIDs, taxis):
         if i % 50 == 0:
             print(f"Iteration {i} completed.")
 
-    print(f"✅ 共跳过 {n_skipped} 个 MC spectrum 样本")
+    print(f"✅ skipped {n_skipped} MC spectrum samples")
     return np.array(output_cm1), np.array(output_cm2), np.array(output_LW1), np.array(output_LW2)
 
 def fit_mrs_spectrum_nonlinear_vbv(bm_FIDs, time_axis, spectrum, initial_guesses):
@@ -1787,7 +1649,6 @@ def fit_mrs_spectrum_nonlinear_vbv(bm_FIDs, time_axis, spectrum, initial_guesses
             lw_list.append(params[2*i])
             Cm_list.append(params[2*i + 1])
 
-        # 这里传入 1 voxel 的 linewidth 和 Cm，需要包一层 []
         result = Sig_func_Multi_Peak(bm_FIDs, [np.array([lw]) for lw in lw_list],
                                                 [np.array([cm]) for cm in Cm_list],
                                                 time_axis, 1)
@@ -1896,6 +1757,94 @@ def fit_mrs_spectrum_lstsq_batch_vbv(bm_FIDs, time_axis, spectra, initial_guesse
     pcov = None
 
     return popt, pcov
+
+""" 
+Direct Fourier Transform (DFT) Functions
+"""
+
+def fft_recon(noisy_kt_spaces):
+    """
+    Reconstructs the image-time (IT) domain signal using a 1D inverse FFT along the k-space axis.
+
+    This function applies FFT shift before and after transformation and corrects for spatial mirroring
+    by flipping and rolling the result.
+
+    Args:
+        noisy_kt_spaces (np.ndarray): 2D array of k-space data (k_x × time)
+
+    Returns:
+        np.ndarray: Reconstructed IT-space signal (space × time)
+    """
+    out = np.fft.ifftshift(
+        np.fft.fft(
+            np.fft.fftshift(noisy_kt_spaces, axes=0),
+            axis=0, norm='ortho'),
+        axes=0)
+    return np.roll(out[::-1], shift=1, axis=0)  # Correct for mirroring and shift
+
+
+def fft_mc(
+    recon_func: callable,
+    add_noise: callable,
+    gen_undersample: callable,
+    UNDER_SAMPLE_NUM: int,
+    seed_mc: int,
+    kt_space_gt: np.ndarray,
+    F: np.ndarray,
+    K_POINTS: int,
+    time_axis: np.ndarray,
+    noise_SD: float,
+    iterations: int = 500,
+    handler: bool = False,
+) -> tuple:
+    """
+    Monte Carlo simulation for uncertainty quantification using Direct Fourier Transform.
+
+    Args:
+        recon_func (callable): Function to perform FFT-based reconstruction
+        add_noise (callable): Function to add Gaussian noise to k-space data
+        gen_undersample (callable): Function to generate undersampled k-space
+        UNDER_SAMPLE_NUM (int): Number of retained lines in undersampled k-space
+        seed_mc (int): Random seed for reproducibility
+        kt_space_gt (np.ndarray): Ground-truth full k-space (2D array)
+        F (np.ndarray): Fourier matrix
+        K_POINTS (int): Number of spatial points
+        time_axis (np.ndarray): Time sampling points
+        noise_SD (float): Standard deviation of Gaussian noise
+        iterations (int): Number of Monte Carlo samples (default: 500)
+        handler (bool): Flag indicating if undersampling should be applied
+
+    Returns:
+        tuple: 
+            - np.ndarray: Stack of reconstructed spectra from each iteration (shape: [iterations, space, time])
+    """
+    output = []
+    rng = np.random.default_rng(seed=seed_mc)  # Create reproducible random number generator
+
+    for i in range(iterations):
+        # Generate new noisy k-space
+        gen_ktspace = add_noise(kspace=kt_space_gt, rng=rng, noise_SD=noise_SD)
+
+        # Apply undersampling if needed
+        gen_undersample_result, new_F = gen_undersample(
+            noisy_kt_space_US=gen_ktspace,
+            F_US=F,
+            UNDER_SAMPLE_NUM=UNDER_SAMPLE_NUM,
+            K_POINTS=K_POINTS,
+            time_axis=time_axis,
+            handler=handler
+        )
+
+        # Reconstruct IT-space signal
+        result_spec_est = recon_func(noisy_kt_spaces=gen_undersample_result)
+        output.append(result_spec_est)
+
+        # Progress feedback
+        if i % 50 == 0:
+            print(f"Iteration {i} completed.")
+
+    return np.asarray(output)
+
 
 
 
