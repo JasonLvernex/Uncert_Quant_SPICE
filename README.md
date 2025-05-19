@@ -29,6 +29,13 @@ pip install -r requirements.txt
 2. Follow the notebook to: 
 
     1. Load basis and anatomical inputs
+    2. Plot and construct a 1D Phantom
+    3. Train subspace learning
+    4. Monte Carlo (MC) Method for SPICE and DFT reconstruction
+    5. Analytical Method for SPICE Recon Uncertainty Estimation (Before fitting Uncertainty)
+    6. Uncertainty Comparison between SPICE and DFT before Spectral Fitting
+    7.  Monte Carlo (MC) Method for SPICE and DFT Spectral fitting
+    8.  Results ploting
 
 ## Citation
 
